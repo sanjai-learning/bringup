@@ -1,6 +1,6 @@
 ---
 name: zerodha-mcp
-description: Configure and run a Zerodha MCP server for client LI8768 with environment-based secrets and safe token rotation.
+description: Configure and run a Zerodha MCP server for client LI8768 using VM-hosted secrets, SSH transport, and safe token rotation.
 ---
 
 # Zerodha MCP
@@ -9,28 +9,36 @@ description: Configure and run a Zerodha MCP server for client LI8768 with envir
 - Client ID: LI8768
 - Transport: stdio
 - Server entrypoint: mcp/zerodha_server.py
+- Default MCP target: remote VM via SSH
 
-## Local Setup
+## Repo Setup
 ```bash
 cd /home/sass273491/delete/bringup
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
 ```
 
-## Runtime Environment
-- `ZERODHA_API_KEY`
-- `ZERODHA_API_SECRET`
-- `ZERODHA_CLIENT_ID` (default `LI8768`)
-- `ZERODHA_ACCESS_TOKEN` (daily token after login)
-
-## Run Server
+## VM Deployment
 ```bash
 cd /home/sass273491/delete/bringup
-source .venv/bin/activate
-set -a && source .env && set +a
-python mcp/zerodha_server.py
+./scripts/deploy_zerodha_mcp_vm.sh
+```
+
+## VS Code MCP Usage
+- The default MCP server in `.vscode/mcp.json` connects over SSH to `root@203.57.85.108`.
+- Secrets stay on the VM in `/root/secret.txt`.
+- Optional local fallback server remains available as `zerodha-local`.
+
+## Remote Secret Requirements
+- `/root/secret.txt` may be either `KEY=value` lines or a 4-line label/value format.
+- Supported variables are `ZERODHA_API_KEY`, `ZERODHA_API_SECRET`, `ZERODHA_CLIENT_ID`, and `ZERODHA_ACCESS_TOKEN`.
+- If `ZERODHA_CLIENT_ID` is absent, the launcher defaults to `LI8768`.
+- If `/root/zerodha_access_token` exists, it is loaded automatically.
+
+## Remote Run Command
+```bash
+ssh root@203.57.85.108 /opt/bringup/scripts/zerodha_remote_mcp.sh
 ```
 
 ## Available MCP Tools
@@ -43,13 +51,14 @@ python mcp/zerodha_server.py
 - `zerodha_positions`
 - `zerodha_quote`
 
-## VM Secret Flow (No Plaintext in Git)
+## Access Token Rotation
 ```bash
-# Pull values from the VM secret file and map to local env without committing them
-ssh root@203.57.85.108 'cat ~/secret.txt'
+# Save a fresh daily access token on the VM after exchanging the request token
+ssh root@203.57.85.108 "printf '%s\n' 'NEW_ACCESS_TOKEN' > /root/zerodha_access_token"
 ```
 
 ## Guardrails
 - Never commit `.env` or secret files.
 - Rotate `ZERODHA_ACCESS_TOKEN` when it expires.
 - Keep API key/secret only in secure host-local storage.
+

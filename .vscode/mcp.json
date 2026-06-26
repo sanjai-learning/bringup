@@ -2,6 +2,14 @@
   "servers": {
     "zerodha": {
       "type": "stdio",
+      "command": "ssh",
+      "args": [
+        "root@203.57.85.108",
+        "/opt/bringup/scripts/zerodha_remote_mcp.sh"
+      ]
+    },
+    "zerodha-local": {
+      "type": "stdio",
       "command": "${workspaceFolder}/.venv/bin/python",
       "args": [
         "${workspaceFolder}/mcp/zerodha_server.py"
