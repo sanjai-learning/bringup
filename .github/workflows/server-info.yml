@@ -1,0 +1,29 @@
+name: Server Info
+
+on:
+  workflow_dispatch:
+
+jobs:
+  print-server-info:
+    runs-on: [self-hosted, linux, x64, vm526300408]
+
+    steps:
+      - name: Print OS details
+        run: |
+          echo "== OS =="
+          uname -a
+          echo
+          cat /etc/os-release
+
+      - name: Print CPU details
+        run: |
+          echo "== CPU =="
+          echo "Logical CPUs: $(nproc)"
+          lscpu
+
+      - name: Print memory details
+        run: |
+          echo "== Memory =="
+          free -h
+          echo
+          awk '/MemTotal/ {print "MemTotal:", $2 " " $3}' /proc/meminfo
