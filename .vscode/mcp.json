@@ -1,0 +1,36 @@
+{
+  "servers": {
+    "zerodha": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": [
+        "${workspaceFolder}/mcp/zerodha_server.py"
+      ],
+      "env": {
+        "ZERODHA_API_KEY": "${input:zerodha_api_key}",
+        "ZERODHA_API_SECRET": "${input:zerodha_api_secret}",
+        "ZERODHA_CLIENT_ID": "LI8768",
+        "ZERODHA_ACCESS_TOKEN": "${input:zerodha_access_token}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "id": "zerodha_api_key",
+      "type": "promptString",
+      "description": "Zerodha API Key"
+    },
+    {
+      "id": "zerodha_api_secret",
+      "type": "promptString",
+      "description": "Zerodha API Secret",
+      "password": true
+    },
+    {
+      "id": "zerodha_access_token",
+      "type": "promptString",
+      "description": "Zerodha Access Token",
+      "password": true
+    }
+  ]
+}
