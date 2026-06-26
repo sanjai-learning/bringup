@@ -1,0 +1,14 @@
+services:
+  zerodha-webui:
+    build:
+      context: .
+    container_name: zerodha-webui
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.web
+    volumes:
+      - /root/secret.txt:/run/secrets/zerodha_secret.txt:ro
+      - ./data:/data
+

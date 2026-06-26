@@ -1,0 +1,368 @@
+:root {
+  --bg: #f3efe6;
+  --ink: #12212f;
+  --muted: #5a6772;
+  --panel: rgba(255, 252, 246, 0.82);
+  --line: rgba(18, 33, 47, 0.12);
+  --accent: #0d8a72;
+  --accent-2: #f28f3b;
+  --danger: #9e2a2b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(242, 143, 59, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(13, 138, 114, 0.16), transparent 30%),
+    linear-gradient(180deg, #f8f3eb 0%, var(--bg) 100%);
+}
+
+.shell {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 3rem 0 4rem;
+}
+
+.hero {
+  padding: 2rem;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(18, 33, 47, 0.08);
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
+h1, h2 {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 5vw, 4.4rem);
+  line-height: 0.95;
+  max-width: 10ch;
+}
+
+.lede {
+  max-width: 58ch;
+  color: var(--muted);
+  font-size: 1.05rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.primary,
+button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.9rem 1.3rem;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.primary {
+  display: inline-block;
+  background: var(--ink);
+  color: white;
+}
+
+.ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.session-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+
+.session-name {
+  font-weight: 700;
+}
+
+.session-login,
+.muted {
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 1rem;
+}
+
+.data-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.panel {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 24px;
+  padding: 1.25rem;
+  min-height: 180px;
+}
+
+.panel.accent {
+  background: linear-gradient(135deg, rgba(13, 138, 114, 0.12), rgba(242, 143, 59, 0.12));
+}
+
+.ok {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.warn {
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+.error,
+pre {
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: rgba(18, 33, 47, 0.06);
+  padding: 0.9rem;
+  border-radius: 14px;
+}
+
+.error {
+  color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .shell {
+    width: min(100% - 1rem, 1180px);
+    padding-top: 1rem;
+  }
+
+  .hero,
+  .panel {
+    border-radius: 20px;
+  }
+
+  h1 {
+    max-width: none;
+  }
+
+  .session-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+:root {
+  color-scheme: light;
+  --bg: #f4efe6;
+  --bg-accent: #e7d7bb;
+  --ink: #1b1f1f;
+  --muted: #5b615f;
+  --panel: rgba(255, 250, 241, 0.82);
+  --line: rgba(27, 31, 31, 0.12);
+  --brand: #0d6a52;
+  --brand-2: #b6632d;
+  --error: #8f2d2d;
+  --success: #155f3b;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(182, 99, 45, 0.15), transparent 28%),
+    radial-gradient(circle at top right, rgba(13, 106, 82, 0.18), transparent 32%),
+    linear-gradient(180deg, #fbf7ef 0%, var(--bg) 100%);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+.shell {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+.hero,
+.toolbar,
+.grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.hero,
+.toolbar {
+  grid-template-columns: 1.6fr 1fr;
+  align-items: start;
+}
+
+.two-up {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.eyebrow,
+.label,
+.hint {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-family: "Bitter", Georgia, serif;
+  font-size: clamp(2.2rem, 5vw, 4.5rem);
+  line-height: 0.96;
+  max-width: 12ch;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.8rem;
+}
+
+.lead {
+  margin-top: 1rem;
+  max-width: 52rem;
+  color: var(--muted);
+  font-size: 1.02rem;
+}
+
+.panel,
+.flash {
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 1.25rem;
+  box-shadow: 0 18px 40px rgba(27, 31, 31, 0.08);
+}
+
+.panel.compact {
+  align-self: end;
+}
+
+.flash-success {
+  border-color: rgba(21, 95, 59, 0.22);
+}
+
+.flash-error {
+  border-color: rgba(143, 45, 45, 0.22);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.15rem;
+  text-decoration: none;
+  background: linear-gradient(135deg, var(--brand), #2b8d73);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button-secondary {
+  background: linear-gradient(135deg, #423225, #6f5540);
+}
+
+.warning,
+.hint {
+  margin-top: 0.75rem;
+}
+
+.warning,
+.success-text {
+  color: var(--muted);
+}
+
+.identity {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.identity img {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 2px solid rgba(27, 31, 31, 0.08);
+}
+
+.stacked-form {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+input {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  padding: 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.7);
+  font: inherit;
+}
+
+pre {
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(27, 31, 31, 0.94);
+  color: #f8f0e3;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+a {
+  color: var(--brand);
+}
+
+@media (max-width: 860px) {
+  .hero,
+  .toolbar,
+  .two-up {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    max-width: none;
+  }
+}
