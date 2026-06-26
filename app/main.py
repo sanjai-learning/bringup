@@ -143,6 +143,23 @@ async def _dashboard_data() -> dict[str, Any]:
     return data
 
 
+async def _page_state(show_account_details: bool) -> dict[str, Any]:
+    health = await _call_mcp_tool("zerodha_healthcheck")
+    state: dict[str, Any] = {
+        "health": health,
+        "show_account_details": show_account_details,
+    }
+
+    if not health.get("configured", {}).get("access_token"):
+        state["login"] = await _call_mcp_tool("zerodha_login_url")
+        return state
+
+    if show_account_details:
+        state["dashboard"] = await _dashboard_data()
+
+    return state
+
+
 def _persist_access_token(access_token: str) -> None:
     ZERODHA_ACCESS_TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
     ZERODHA_ACCESS_TOKEN_FILE.write_text(access_token.strip() + "\n")
@@ -151,9 +168,9 @@ def _persist_access_token(access_token: str) -> None:
 @app.get("/")
 async def index(request: Request):
     user = _current_user(request)
-    dashboard = None
+    page_state = None
     if user:
-        dashboard = await _dashboard_data()
+        page_state = await _page_state(show_account_details=False)
 
     return TEMPLATES.TemplateResponse(
         request,
@@ -161,7 +178,29 @@ async def index(request: Request):
         {
             "user": user,
             "flash": _pop_flash(request),
-            "dashboard": dashboard,
+            "page_state": page_state,
+            "github_configured": _github_configured(),
+            "app_base_url": APP_BASE_URL,
+            "allowed_org": GITHUB_ALLOWED_ORG,
+        },
+    )
+
+
+@app.get("/account-details")
+async def account_details(request: Request):
+    redirect = _require_user(request)
+    if redirect is not None:
+        return redirect
+
+    page_state = await _page_state(show_account_details=True)
+
+    return TEMPLATES.TemplateResponse(
+        request,
+        "index.html",
+        {
+            "user": _current_user(request),
+            "flash": _pop_flash(request),
+            "page_state": page_state,
             "github_configured": _github_configured(),
             "app_base_url": APP_BASE_URL,
             "allowed_org": GITHUB_ALLOWED_ORG,

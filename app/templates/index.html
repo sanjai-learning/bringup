@@ -64,16 +64,19 @@
     <section class="grid two-up">
       <article class="panel">
         <h2>MCP Health</h2>
-        <pre>{{ dashboard.health | tojson(indent=2) }}</pre>
+        <pre>{{ page_state.health | tojson(indent=2) }}</pre>
       </article>
       <article class="panel">
-        <h2>Zerodha Connection</h2>
-        {% if dashboard.health.configured.access_token %}
-        <p class="success-text">Access token is configured. Account data is available below.</p>
+        <h2>Account Details</h2>
+        {% if page_state.health.configured.access_token %}
+        <p class="success-text">GitHub auth is done. Click below and the server will use MCP to fetch Zerodha account data.</p>
+        <p><a class="button" href="/account-details">Show Account Details</a></p>
+        {% if page_state.show_account_details %}
+        <p class="hint">Account details below were loaded by the server through MCP.</p>
         {% else %}
         <p class="warning">No access token is currently loaded. Use the Zerodha login flow, then land back on this app or paste the request token manually.</p>
-        {% if dashboard.login and dashboard.login.login_url %}
-        <p><a class="button" href="{{ dashboard.login.login_url }}" target="_blank" rel="noreferrer">Open Zerodha Login</a></p>
+        {% if page_state.login and page_state.login.login_url %}
+        <p><a class="button" href="{{ page_state.login.login_url }}" target="_blank" rel="noreferrer">Open Zerodha Login</a></p>
         {% endif %}
         <form method="post" action="/zerodha/request-token" class="stacked-form">
           <label for="request_token">Request token</label>
@@ -85,23 +88,23 @@
       </article>
     </section>
 
-    {% if dashboard.profile %}
+    {% if page_state.dashboard and page_state.dashboard.profile %}
     <section class="grid two-up">
       <article class="panel">
         <h2>Profile</h2>
-        <pre>{{ dashboard.profile | tojson(indent=2) }}</pre>
+        <pre>{{ page_state.dashboard.profile | tojson(indent=2) }}</pre>
       </article>
       <article class="panel">
         <h2>Margins</h2>
-        <pre>{{ dashboard.margins | tojson(indent=2) }}</pre>
+        <pre>{{ page_state.dashboard.margins | tojson(indent=2) }}</pre>
       </article>
       <article class="panel">
         <h2>Holdings</h2>
-        <pre>{{ dashboard.holdings | tojson(indent=2) }}</pre>
+        <pre>{{ page_state.dashboard.holdings | tojson(indent=2) }}</pre>
       </article>
       <article class="panel">
         <h2>Positions</h2>
-        <pre>{{ dashboard.positions | tojson(indent=2) }}</pre>
+        <pre>{{ page_state.dashboard.positions | tojson(indent=2) }}</pre>
       </article>
     </section>
     {% endif %}
