@@ -1,10 +1,24 @@
 services:
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - oauth2-proxy
+    networks:
+      - platform
+
   oauth2-proxy:
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
     container_name: oauth2-proxy
     restart: unless-stopped
-    ports:
-      - "80:4180"
     environment:
       OAUTH2_PROXY_PROVIDER: github
       OAUTH2_PROXY_CLIENT_ID: ${GITHUB_CLIENT_ID}
@@ -14,10 +28,10 @@ services:
       OAUTH2_PROXY_UPSTREAMS: http://web-ui:3000/
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_GITHUB_USERS: sanjaiAI
-      OAUTH2_PROXY_REDIRECT_URL: http://203.57.85.108/oauth2/callback
+      OAUTH2_PROXY_REDIRECT_URL: https://vysale.duckdns.org/oauth2/callback
       OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
       OAUTH2_PROXY_PASS_ACCESS_TOKEN: "false"
-      OAUTH2_PROXY_COOKIE_SECURE: "false"
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
     depends_on:
       - web-ui
@@ -49,7 +63,7 @@ services:
     restart: unless-stopped
     environment:
       MCP_SSE_URL: http://platform-mcp:8000/sse
-      APP_BASE_URL: http://203.57.85.108
+      APP_BASE_URL: https://vysale.duckdns.org
     depends_on:
       - platform-mcp
     networks:
@@ -61,4 +75,6 @@ networks:
 
 volumes:
   platform-data:
+  caddy-data:
+  caddy-config:
 
