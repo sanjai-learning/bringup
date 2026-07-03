@@ -101,13 +101,18 @@ def zerodha_exchange_request_token(request_token: str) -> dict[str, Any]:
         api_secret = _env("ZERODHA_API_SECRET")
         client = _client(require_access_token=False)
         data = client.generate_session(request_token=request_token, api_secret=api_secret)
+        access_token = data.get("access_token")
+        if access_token:
+            # Persist token so subsequent calls can use it
+            os.environ["ZERODHA_ACCESS_TOKEN"] = access_token
+            _ACCESS_TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+            _ACCESS_TOKEN_FILE.write_text(access_token.strip() + "\n")
         return {
             "ok": True,
-            "access_token": data.get("access_token"),
+            "access_token": access_token,
             "user_id": data.get("user_id"),
             "user_name": data.get("user_name"),
             "email": data.get("email"),
-            "message": "Store access_token in ZERODHA_ACCESS_TOKEN.",
         }
     except Exception as exc:
         return _safe_error(exc)
