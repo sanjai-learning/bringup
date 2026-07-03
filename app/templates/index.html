@@ -3,77 +3,195 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zerodha Trading Platform</title>
+  <title>Trading Platform — Zerodha</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
   <main class="shell">
-    <section class="hero">
+    <header class="topbar">
       <div>
-        <p class="eyebrow">Trading Platform</p>
-        <h1>Zerodha account access via MCP.</h1>
-        <p class="lead">Authenticated through GitHub. All data flows through the MCP platform server.</p>
+        <h1 class="logo">Vysale</h1>
+        <p class="tagline">Trading Platform</p>
       </div>
-      <div class="panel compact">
-        <p class="label">Platform URL</p>
-        <p>{{ app_base_url }}</p>
-        <p class="label">Signed in as</p>
-        <p>{{ user.name or user.login }}</p>
+      <div class="user-badge">
+        <span class="dot {{ 'dot-green' if page_state.health.configured.access_token else 'dot-yellow' }}"></span>
+        <span>{{ user.name or user.login or 'User' }}</span>
       </div>
+    </header>
+
+    {% if not page_state.health.configured.access_token %}
+    <section class="card card-cta">
+      <h2>Connect Zerodha</h2>
+      <p>Log in to Zerodha to access your account data.</p>
+      {% if page_state.login and page_state.login.login_url %}
+      <a class="button" href="{{ page_state.login.login_url }}" target="_blank" rel="noreferrer">Login to Zerodha</a>
+      {% endif %}
+      <form method="post" action="/zerodha/request-token" class="inline-form">
+        <input name="request_token" type="text" placeholder="Or paste request_token here">
+        <button class="button button-sm" type="submit">Exchange</button>
+      </form>
     </section>
 
-    <section class="grid two-up">
-      <article class="panel">
-        <h2>MCP Health</h2>
-        <pre>{{ page_state.health | tojson(indent=2) }}</pre>
-      </article>
-      <article class="panel">
-        <h2>Account Details</h2>
-        {% if page_state.health.configured.access_token %}
-        <p class="success-text">Access token loaded. Click below to fetch account data via MCP.</p>
-        <p><a class="button" href="/account-details">Show Account Details</a></p>
-        {% else %}
-        <p class="warning">No access token loaded. Use the Zerodha login flow below.</p>
-        {% if page_state.login and page_state.login.login_url %}
-        <p><a class="button" href="{{ page_state.login.login_url }}" target="_blank" rel="noreferrer">Open Zerodha Login</a></p>
-        {% endif %}
-        <form method="post" action="/zerodha/request-token" class="stacked-form">
-          <label for="request_token">Request token</label>
-          <input id="request_token" name="request_token" type="text" placeholder="Paste Zerodha request_token">
-          <button class="button" type="submit">Exchange Token</button>
-        </form>
-        <p class="hint">Zerodha redirect URL: <strong>{{ app_base_url }}/auth/zerodha/callback</strong></p>
-        {% endif %}
-      </article>
+    {% else %}
+
+    {% if not page_state.show_account_details %}
+    <section class="card card-cta">
+      <p class="status-ok">✓ Connected to Zerodha ({{ page_state.health.client_id }})</p>
+      <a class="button" href="/account-details">View Account Details</a>
     </section>
+    {% endif %}
 
     {% if page_state.show_account_details and page_state.dashboard %}
-    <section class="grid two-up">
-      {% if page_state.dashboard.profile %}
-      <article class="panel">
+
+    {# ===== PROFILE ===== #}
+    {% if page_state.dashboard.profile and page_state.dashboard.profile.ok %}
+    {% set p = page_state.dashboard.profile.profile %}
+    <section class="card">
+      <div class="section-header">
         <h2>Profile</h2>
-        <pre>{{ page_state.dashboard.profile | tojson(indent=2) }}</pre>
-      </article>
-      {% endif %}
-      {% if page_state.dashboard.margins %}
-      <article class="panel">
-        <h2>Margins</h2>
-        <pre>{{ page_state.dashboard.margins | tojson(indent=2) }}</pre>
-      </article>
-      {% endif %}
-      {% if page_state.dashboard.holdings %}
-      <article class="panel">
+        <span class="badge">{{ p.user_id or page_state.health.client_id }}</span>
+      </div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Name</span>
+          <span class="info-value">{{ p.user_name or p.user_shortname or '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Email</span>
+          <span class="info-value">{{ p.email or '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Broker</span>
+          <span class="info-value">{{ p.broker or 'ZERODHA' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Exchanges</span>
+          <span class="info-value">{{ p.exchanges | join(', ') if p.exchanges else '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Products</span>
+          <span class="info-value">{{ p.order_types | join(', ') if p.order_types else '—' }}</span>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {# ===== MARGINS ===== #}
+    {% if page_state.dashboard.margins and page_state.dashboard.margins.ok %}
+    {% set m = page_state.dashboard.margins.margins %}
+    <section class="card">
+      <h2>Margins</h2>
+      <div class="metrics-row">
+        {% if m.equity and m.equity.available %}
+        <div class="metric">
+          <span class="metric-value">₹{{ "{:,.2f}".format(m.equity.available.live_balance or 0) }}</span>
+          <span class="metric-label">Available (Equity)</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value">₹{{ "{:,.2f}".format(m.equity.utilised.debits or 0) }}</span>
+          <span class="metric-label">Used</span>
+        </div>
+        <div class="metric">
+          <span class="metric-value">₹{{ "{:,.2f}".format(m.equity.net or 0) }}</span>
+          <span class="metric-label">Net</span>
+        </div>
+        {% endif %}
+        {% if m.commodity and m.commodity.available %}
+        <div class="metric">
+          <span class="metric-value">₹{{ "{:,.2f}".format(m.commodity.available.live_balance or 0) }}</span>
+          <span class="metric-label">Available (Commodity)</span>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
+    {# ===== HOLDINGS ===== #}
+    {% if page_state.dashboard.holdings and page_state.dashboard.holdings.ok %}
+    {% set holdings = page_state.dashboard.holdings.holdings %}
+    <section class="card">
+      <div class="section-header">
         <h2>Holdings</h2>
-        <pre>{{ page_state.dashboard.holdings | tojson(indent=2) }}</pre>
-      </article>
-      {% endif %}
-      {% if page_state.dashboard.positions %}
-      <article class="panel">
-        <h2>Positions</h2>
-        <pre>{{ page_state.dashboard.positions | tojson(indent=2) }}</pre>
-      </article>
+        <span class="badge">{{ holdings | length }} stocks</span>
+      </div>
+      {% if holdings %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th class="r">Qty</th>
+              <th class="r">Avg Price</th>
+              <th class="r">LTP</th>
+              <th class="r">Current Value</th>
+              <th class="r">P&L</th>
+              <th class="r">Change %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in holdings %}
+            {% set pnl = (h.last_price - h.average_price) * h.quantity if h.last_price and h.average_price else 0 %}
+            {% set pnl_pct = ((h.last_price - h.average_price) / h.average_price * 100) if h.average_price and h.average_price > 0 else 0 %}
+            <tr>
+              <td><strong>{{ h.tradingsymbol }}</strong><br><span class="muted">{{ h.exchange }}</span></td>
+              <td class="r">{{ h.quantity }}</td>
+              <td class="r">₹{{ "{:,.2f}".format(h.average_price or 0) }}</td>
+              <td class="r">₹{{ "{:,.2f}".format(h.last_price or 0) }}</td>
+              <td class="r">₹{{ "{:,.2f}".format((h.last_price or 0) * (h.quantity or 0)) }}</td>
+              <td class="r {{ 'profit' if pnl >= 0 else 'loss' }}">₹{{ "{:,.2f}".format(pnl) }}</td>
+              <td class="r {{ 'profit' if pnl_pct >= 0 else 'loss' }}">{{ "{:+.2f}".format(pnl_pct) }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">No holdings found.</p>
       {% endif %}
     </section>
+    {% endif %}
+
+    {# ===== POSITIONS ===== #}
+    {% if page_state.dashboard.positions and page_state.dashboard.positions.ok %}
+    {% set positions = page_state.dashboard.positions.positions %}
+    {% set net = positions.net if positions.net else positions %}
+    <section class="card">
+      <div class="section-header">
+        <h2>Positions</h2>
+        <span class="badge">{{ net | length if net else 0 }} open</span>
+      </div>
+      {% if net %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th class="r">Qty</th>
+              <th class="r">Avg Price</th>
+              <th class="r">LTP</th>
+              <th class="r">P&L</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pos in net %}
+            <tr>
+              <td><strong>{{ pos.tradingsymbol }}</strong><br><span class="muted">{{ pos.exchange }} · {{ pos.product }}</span></td>
+              <td class="r">{{ pos.quantity }}</td>
+              <td class="r">₹{{ "{:,.2f}".format(pos.average_price or 0) }}</td>
+              <td class="r">₹{{ "{:,.2f}".format(pos.last_price or 0) }}</td>
+              <td class="r {{ 'profit' if (pos.pnl or 0) >= 0 else 'loss' }}">₹{{ "{:,.2f}".format(pos.pnl or 0) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="muted">No open positions.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% endif %}
     {% endif %}
   </main>
 </body>
