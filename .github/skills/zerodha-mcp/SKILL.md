@@ -1,64 +1,89 @@
 ---
 name: zerodha-mcp
-description: Configure and run a Zerodha MCP server for client LI8768 using VM-hosted secrets, SSH transport, and safe token rotation.
+description: Configure and operate the Zerodha MCP platform server running as a Docker container with SSE transport on the production VM.
 ---
 
-# Zerodha MCP
+# Zerodha MCP Platform Server
 
-## Scope
+## Architecture
+- Server: `mcp/zerodha_server.py` using FastMCP
+- Transport: SSE (Server-Sent Events) over HTTP on port 8000
+- Container: `platform-mcp` Docker service
+- Network: Internal Docker network only (not exposed to internet)
 - Client ID: LI8768
-- Transport: stdio
-- Server entrypoint: mcp/zerodha_server.py
-- Default MCP target: remote VM via SSH
 
-## Repo Setup
-```bash
-cd /home/sass273491/delete/bringup
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+## Docker Configuration
+- Image built from `Dockerfile.mcp`
+- Dependencies: `requirements-mcp.txt` (mcp, kiteconnect, uvicorn)
+- Environment variables:
+  - `MCP_TRANSPORT=sse`
+  - `MCP_PORT=8000`
+- Volumes:
+  - `/root/secret.txt` → `/run/secrets/zerodha_secret.txt` (API key/secret)
+  - `platform-data` → `/data` (persisted access token)
+
+## Secret File Format (`/root/secret.txt` on VM)
 ```
-
-## VM Deployment
-```bash
-cd /home/sass273491/delete/bringup
-./scripts/deploy_zerodha_mcp_vm.sh
+ZERODHA_API_KEY=your_api_key
+ZERODHA_API_SECRET=your_api_secret
 ```
-
-## VS Code MCP Usage
-- The default MCP server in `.vscode/mcp.json` connects over SSH to `root@203.57.85.108`.
-- Secrets stay on the VM in `/root/secret.txt`.
-- Optional local fallback server remains available as `zerodha-local`.
-
-## Remote Secret Requirements
-- `/root/secret.txt` may be either `KEY=value` lines or a 4-line label/value format.
-- Supported variables are `ZERODHA_API_KEY`, `ZERODHA_API_SECRET`, `ZERODHA_CLIENT_ID`, and `ZERODHA_ACCESS_TOKEN`.
-- If `ZERODHA_CLIENT_ID` is absent, the launcher defaults to `LI8768`.
-- If `/root/zerodha_access_token` exists, it is loaded automatically.
-
-## Remote Run Command
-```bash
-ssh root@203.57.85.108 /opt/bringup/scripts/zerodha_remote_mcp.sh
+Alternative 4-line format:
+```
+API key
+your_api_key
+API secret
+your_api_secret
 ```
 
 ## Available MCP Tools
-- `zerodha_healthcheck`
-- `zerodha_login_url`
-- `zerodha_exchange_request_token`
-- `zerodha_profile`
-- `zerodha_margins`
-- `zerodha_holdings`
-- `zerodha_positions`
-- `zerodha_quote`
+| Tool | Purpose | Auth Required |
+|------|---------|---------------|
+| `zerodha_healthcheck` | Check config status | No |
+| `zerodha_login_url` | Generate Kite login URL | No |
+| `zerodha_exchange_request_token` | Exchange token + persist | No |
+| `zerodha_profile` | Fetch user profile | Yes |
+| `zerodha_margins` | Fetch account margins | Yes |
+| `zerodha_holdings` | Fetch holdings | Yes |
+| `zerodha_positions` | Fetch positions | Yes |
+| `zerodha_quote` | Fetch symbol quote | Yes |
 
-## Access Token Rotation
+## Access Token
+- Stored at `/data/zerodha_access_token` inside container (Docker volume)
+- Expires daily at ~6 AM IST
+- Auto-persisted by `zerodha_exchange_request_token` tool
+- Can be refreshed via web UI Zerodha login flow
+
+## Connecting as a Client
+
+### From Python (via SSH tunnel)
 ```bash
-# Save a fresh daily access token on the VM after exchanging the request token
-ssh root@203.57.85.108 "printf '%s\n' 'NEW_ACCESS_TOKEN' > /root/zerodha_access_token"
+# Open tunnel
+ssh -L 8000:localhost:8000 -i ~/.ssh/github_learning root@203.57.85.108
+
+# Run client
+python client/zerodha_client.py profile
+```
+
+### From Web UI
+The web-ui container connects internally: `http://platform-mcp:8000/sse`
+
+### SSE Endpoint
+```
+http://platform-mcp:8000/sse  (internal)
+http://localhost:8000/sse      (via SSH tunnel)
+```
+
+## Deployment
+Automatic via GitHub Actions on push to main:
+1. Build image → push to ghcr.io
+2. Pull on VM → docker compose up
+
+Manual:
+```bash
+ssh -i ~/.ssh/github_learning root@203.57.85.108 'cd /opt/bringup && git pull && docker compose build platform-mcp && docker compose up -d platform-mcp'
 ```
 
 ## Guardrails
 - Never commit `.env` or secret files.
-- Rotate `ZERODHA_ACCESS_TOKEN` when it expires.
-- Keep API key/secret only in secure host-local storage.
-
+- Access token expires daily — refresh via web UI.
+- All Zerodha API calls go through this MCP server — no direct broker access from web UI.
