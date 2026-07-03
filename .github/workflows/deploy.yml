@@ -1,0 +1,76 @@
+name: Deploy Platform
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push platform-mcp
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.mcp
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/platform-mcp:latest
+
+      - name: Build and push web-ui
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.web
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/web-ui:latest
+
+  deploy:
+    runs-on: [self-hosted, linux, x64, vm526300408]
+    needs: build-and-push
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Deploy with Docker Compose
+        run: |
+          cd ${{ github.workspace }}
+
+          # Ensure .env exists with secrets
+          if [ ! -f .env ]; then
+            echo "ERROR: .env file not found on VM. Create it from .env.example with real values."
+            exit 1
+          fi
+
+          # Pull latest images and restart
+          docker compose pull
+          docker compose up -d --remove-orphans
+
+      - name: Verify services are running
+        run: |
+          sleep 10
+          docker compose ps
+          echo "--- Health check ---"
+          curl -sf http://localhost:3000/ > /dev/null && echo "web-ui: OK" || echo "web-ui: FAILED"
+          curl -sf http://localhost:8000/sse > /dev/null && echo "platform-mcp: OK" || echo "platform-mcp: listening"

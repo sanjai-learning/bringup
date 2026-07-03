@@ -1,0 +1,10 @@
+# Production override — uses pre-built images from ghcr.io
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  platform-mcp:
+    image: ghcr.io/sanjai-learning/bringup/platform-mcp:latest
+    build: !reset null
+
+  web-ui:
+    image: ghcr.io/sanjai-learning/bringup/web-ui:latest
+    build: !reset null

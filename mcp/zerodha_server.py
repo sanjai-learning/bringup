@@ -1,9 +1,35 @@
 import os
+from pathlib import Path
 from typing import Any
 
 from kiteconnect import KiteConnect
 from mcp.server.fastmcp import FastMCP
 
+
+# Load secrets from mounted file if present
+_SECRET_FILE = Path(os.getenv("ZERODHA_SECRET_FILE", "/run/secrets/zerodha_secret.txt"))
+_ACCESS_TOKEN_FILE = Path(os.getenv("ZERODHA_ACCESS_TOKEN_FILE", "/data/zerodha_access_token"))
+
+
+def _load_secrets() -> None:
+    """Load Zerodha secrets from file into environment variables."""
+    if _SECRET_FILE.exists():
+        lines = [l.strip() for l in _SECRET_FILE.read_text().splitlines() if l.strip()]
+        if lines and all("=" in l for l in lines):
+            for line in lines:
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip())
+        elif len(lines) >= 4:
+            os.environ.setdefault("ZERODHA_API_KEY", lines[1])
+            os.environ.setdefault("ZERODHA_API_SECRET", lines[3])
+
+    if _ACCESS_TOKEN_FILE.exists():
+        token = _ACCESS_TOKEN_FILE.read_text().strip()
+        if token:
+            os.environ.setdefault("ZERODHA_ACCESS_TOKEN", token)
+
+
+_load_secrets()
 
 mcp = FastMCP("zerodha")
 
@@ -138,4 +164,8 @@ def zerodha_quote(exchange: str, symbol: str) -> dict[str, Any]:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    transport = os.getenv("MCP_TRANSPORT", "stdio").strip().lower()
+    if transport == "sse":
+        mcp.run(transport="sse", host="0.0.0.0", port=int(os.getenv("MCP_PORT", "8000")))
+    else:
+        mcp.run(transport="stdio")

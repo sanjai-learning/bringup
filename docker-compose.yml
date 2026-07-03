@@ -1,14 +1,64 @@
 services:
-  zerodha-webui:
-    build:
-      context: .
-    container_name: zerodha-webui
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
+    container_name: oauth2-proxy
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "2016:4180"
+    environment:
+      OAUTH2_PROXY_PROVIDER: github
+      OAUTH2_PROXY_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      OAUTH2_PROXY_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+      OAUTH2_PROXY_GITHUB_ORG: sanjai-learning
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_UPSTREAMS: http://web-ui:3000/
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_REDIRECT_URL: http://203.57.85.108:2016/oauth2/callback
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_PASS_ACCESS_TOKEN: "false"
+      OAUTH2_PROXY_COOKIE_SECURE: "false"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+    depends_on:
+      - web-ui
+    networks:
+      - platform
+
+  platform-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    container_name: platform-mcp
+    restart: unless-stopped
+    environment:
+      MCP_TRANSPORT: sse
+      MCP_PORT: "8000"
     env_file:
-      - .env.web
+      - .env.mcp
     volumes:
       - /root/secret.txt:/run/secrets/zerodha_secret.txt:ro
-      - ./data:/data
+      - platform-data:/data
+    networks:
+      - platform
+
+  web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: web-ui
+    restart: unless-stopped
+    environment:
+      MCP_SSE_URL: http://platform-mcp:8000/sse
+      APP_BASE_URL: http://203.57.85.108:2016
+    depends_on:
+      - platform-mcp
+    networks:
+      - platform
+
+networks:
+  platform:
+    driver: bridge
+
+volumes:
+  platform-data:
 

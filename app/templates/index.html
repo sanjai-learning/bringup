@@ -3,62 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zerodha MCP Web UI</title>
+  <title>Zerodha Trading Platform</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
   <main class="shell">
     <section class="hero">
       <div>
-        <p class="eyebrow">Containerized MCP Dashboard</p>
-        <h1>Zerodha account access through GitHub-authenticated web UI.</h1>
-        <p class="lead">This app always talks to Zerodha through the local MCP server. No VS Code integration is required.</p>
+        <p class="eyebrow">Trading Platform</p>
+        <h1>Zerodha account access via MCP.</h1>
+        <p class="lead">Authenticated through GitHub. All data flows through the MCP platform server.</p>
       </div>
       <div class="panel compact">
-        <p class="label">Base URL</p>
+        <p class="label">Platform URL</p>
         <p>{{ app_base_url }}</p>
-        <p class="label">Allowed GitHub org</p>
-        <p>{{ allowed_org }}</p>
+        <p class="label">Signed in as</p>
+        <p>{{ user.name or user.login }}</p>
       </div>
-    </section>
-
-    {% if flash %}
-    <section class="flash flash-{{ flash.level }}">{{ flash.message }}</section>
-    {% endif %}
-
-    {% if not user %}
-    <section class="grid two-up">
-      <article class="panel">
-        <h2>GitHub Sign-In</h2>
-        <p>Use GitHub OAuth to access the dashboard. Only members of the configured org are allowed.</p>
-        {% if github_configured %}
-        <a class="button" href="/login">Sign in with GitHub</a>
-        {% else %}
-        <p class="warning">GitHub OAuth is not configured yet. Populate <strong>.env.web</strong> with your GitHub OAuth client ID, client secret, and a strong session secret.</p>
-        {% endif %}
-      </article>
-      <article class="panel">
-        <h2>Required GitHub OAuth Settings</h2>
-        <p>Configure your GitHub OAuth app with this callback URL:</p>
-        <pre>{{ app_base_url }}/auth/github/callback</pre>
-        <p>After login, the dashboard reads Zerodha data through MCP tools only.</p>
-      </article>
-    </section>
-    {% else %}
-    <section class="toolbar">
-      <div class="identity">
-        {% if user.avatar_url %}
-        <img alt="avatar" src="{{ user.avatar_url }}">
-        {% endif %}
-        <div>
-          <p class="eyebrow">Signed in</p>
-          <h2>{{ user.name }}</h2>
-          <p><a href="{{ user.html_url }}" target="_blank" rel="noreferrer">@{{ user.login }}</a></p>
-        </div>
-      </div>
-      <form method="post" action="/logout">
-        <button class="button button-secondary" type="submit">Sign out</button>
-      </form>
     </section>
 
     <section class="grid two-up">
@@ -69,12 +30,10 @@
       <article class="panel">
         <h2>Account Details</h2>
         {% if page_state.health.configured.access_token %}
-        <p class="success-text">GitHub auth is done. Click below and the server will use MCP to fetch Zerodha account data.</p>
+        <p class="success-text">Access token loaded. Click below to fetch account data via MCP.</p>
         <p><a class="button" href="/account-details">Show Account Details</a></p>
-        {% if page_state.show_account_details %}
-        <p class="hint">Account details below were loaded by the server through MCP.</p>
         {% else %}
-        <p class="warning">No access token is currently loaded. Use the Zerodha login flow, then land back on this app or paste the request token manually.</p>
+        <p class="warning">No access token loaded. Use the Zerodha login flow below.</p>
         {% if page_state.login and page_state.login.login_url %}
         <p><a class="button" href="{{ page_state.login.login_url }}" target="_blank" rel="noreferrer">Open Zerodha Login</a></p>
         {% endif %}
@@ -83,31 +42,38 @@
           <input id="request_token" name="request_token" type="text" placeholder="Paste Zerodha request_token">
           <button class="button" type="submit">Exchange Token</button>
         </form>
-        <p class="hint">Recommended redirect URL for your Zerodha app: <strong>{{ app_base_url }}/auth/zerodha/callback</strong></p>
+        <p class="hint">Zerodha redirect URL: <strong>{{ app_base_url }}/auth/zerodha/callback</strong></p>
         {% endif %}
       </article>
     </section>
 
-    {% if page_state.dashboard and page_state.dashboard.profile %}
+    {% if page_state.show_account_details and page_state.dashboard %}
     <section class="grid two-up">
+      {% if page_state.dashboard.profile %}
       <article class="panel">
         <h2>Profile</h2>
         <pre>{{ page_state.dashboard.profile | tojson(indent=2) }}</pre>
       </article>
+      {% endif %}
+      {% if page_state.dashboard.margins %}
       <article class="panel">
         <h2>Margins</h2>
         <pre>{{ page_state.dashboard.margins | tojson(indent=2) }}</pre>
       </article>
+      {% endif %}
+      {% if page_state.dashboard.holdings %}
       <article class="panel">
         <h2>Holdings</h2>
         <pre>{{ page_state.dashboard.holdings | tojson(indent=2) }}</pre>
       </article>
+      {% endif %}
+      {% if page_state.dashboard.positions %}
       <article class="panel">
         <h2>Positions</h2>
         <pre>{{ page_state.dashboard.positions | tojson(indent=2) }}</pre>
       </article>
+      {% endif %}
     </section>
-    {% endif %}
     {% endif %}
   </main>
 </body>
