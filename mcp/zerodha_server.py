@@ -31,7 +31,10 @@ def _load_secrets() -> None:
 
 _load_secrets()
 
-mcp = FastMCP("zerodha")
+_MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
+_MCP_PORT = int(os.getenv("MCP_PORT", "8000"))
+
+mcp = FastMCP("zerodha", host=_MCP_HOST, port=_MCP_PORT)
 
 
 def _env(name: str, required: bool = True) -> str:
@@ -165,7 +168,4 @@ def zerodha_quote(exchange: str, symbol: str) -> dict[str, Any]:
 
 if __name__ == "__main__":
     transport = os.getenv("MCP_TRANSPORT", "stdio").strip().lower()
-    if transport == "sse":
-        mcp.run(transport="sse", host="0.0.0.0", port=int(os.getenv("MCP_PORT", "8000")))
-    else:
-        mcp.run(transport="stdio")
+    mcp.run(transport=transport)
